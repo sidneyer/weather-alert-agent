@@ -1,3 +1,5 @@
+debug_logging: false
+
 location:
   name: "Virginia Beach, VA"
   latitude: 36.8529

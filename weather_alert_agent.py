@@ -261,7 +261,10 @@ def send_telegram(config, message):
 
 
 def notify(config, message):
-    if config.get("notifications", {}).get("stdout", {}).get("enabled", True):
+    if (
+        config.get("notifications", {}).get("stdout", {}).get("enabled", True)
+        and config.get("debug_logging", False)
+    ):
         print(message)
 
     for sender in (send_matrix, send_ntfy, send_discord, send_telegram):
