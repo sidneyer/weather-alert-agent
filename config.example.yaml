@@ -1,21 +1,47 @@
 location:
-  name: "Norfolk, VA"
-  latitude: 36.8508
-  longitude: -76.2859
+  name: "Virginia Beach, VA"
+  latitude: 36.8529
+  longitude: -75.9780
+
+# Optional multi-location mode:
+# locations:
+#   - name: "Home"
+#     latitude: 36.8529
+#     longitude: -75.9780
+#   - name: "Work"
+#     latitude: 36.8508
+#     longitude: -76.2859
 
 alerts:
   include: []
+  exclude: []
+
+profiles:
+  commuter: true
+  marine: true
+  outdoor: true
+  coastal_flooding: true
+
+quiet_hours:
+  enabled: false
+  start: "22:00"
+  end: "06:00"
+  allow:
+    - Tornado Warning
+    - Flash Flood Warning
+    - Hurricane Warning
+    - Storm Surge Warning
 
 notifications:
   stdout:
     enabled: true
 
   matrix:
-    enabled: true
+    enabled: false
     homeserver: "https://matrix.example.com"
-    room_id: "!roomid:matrix.example.com"
+    room_id: "!roomid:example.com"
     access_token_env: "MATRIX_ACCESS_TOKEN"
-  
+
   ntfy:
     enabled: false
     server: "https://ntfy.sh"
@@ -23,7 +49,17 @@ notifications:
     topic_env: "NTFY_TOPIC"
     token_env: "NTFY_TOKEN"
     priority: 4
-    tags: "warning,weather" 
+    tags: "warning,weather"
+
+  discord:
+    enabled: false
+    webhook_url_env: "DISCORD_WEBHOOK_URL"
+
+  telegram:
+    enabled: false
+    bot_token_env: "TELEGRAM_BOT_TOKEN"
+    chat_id: ""
+    chat_id_env: "TELEGRAM_CHAT_ID"
 
 rss:
   enabled: true
