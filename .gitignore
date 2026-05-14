@@ -1,0 +1,7 @@
+.venv/
+config.yaml
+state.json
+weather-alerts.xml
+*.log
+.DS_Store
+__pycache__/
