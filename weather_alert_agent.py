@@ -153,8 +153,10 @@ def format_alert(config, feature, location_name):
     profiles = active_profiles(config, event)
     action = instruction or action_for_event(event)
 
-    if len(description) > 650:
-        description = description[:650].rsplit(" ", 1)[0] + "..."
+    max_description = 250 if (config.get("llm", {}) or {}).get("enabled") else 650
+
+    if len(description) > max_description:
+        description = description[:max_description].rsplit(" ", 1)[0] + "..."
 
     icon = {"CRITICAL": "🚨", "HIGH": "⚠️", "MEDIUM": "🔶", "LOW": "ℹ️", "INFO": "ℹ️"}.get(level, "ℹ️")
 
@@ -258,6 +260,114 @@ def send_telegram(config, message):
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     r = requests.post(url, json={"chat_id": chat_id, "text": message[:3900]}, timeout=30)
     r.raise_for_status()
+
+
+
+def build_llm_prompt(config, feature, location_name):
+    props = feature.get("properties", {})
+    event = props.get("event", "Weather Alert")
+    headline = props.get("headline") or event
+    area = props.get("areaDesc", "Unknown area")
+    expires = props.get("expires", "")
+    description = (props.get("description") or "").strip()
+    instruction = (props.get("instruction") or "").strip()
+    max_chars = int((config.get("llm", {}) or {}).get("max_chars", 8000))
+
+    source = f"""
+Event: {event}
+Headline: {headline}
+Location: {location_name}
+Area: {area}
+Expires: {expires}
+
+Description:
+{description}
+
+Instruction:
+{instruction}
+""".strip()[:max_chars]
+
+    return f"""You are summarizing an official National Weather Service alert.
+
+Return ONLY this format:
+
+AI Summary:
+[2-4 plain-language sentences about what matters locally.]
+
+What matters:
+[One short line.]
+
+Suggested action:
+[One short line. Do not invent instructions. Use the official instruction when available.]
+
+Rules:
+- Do not add facts not present in the alert.
+- Do not invent timing, locations, impacts, or safety instructions.
+- Keep it concise.
+- End with: Verify details against the official NWS alert.
+
+Official alert:
+
+{source}
+"""
+
+
+def call_llm(config, prompt):
+    llm = config.get("llm", {}) or {}
+    if not llm.get("enabled"):
+        return ""
+
+    provider = llm.get("provider", "ollama")
+    base_url = llm.get("base_url", "http://localhost:11434").rstrip("/")
+    model = llm.get("model", "llama3.2")
+    timeout = int(llm.get("timeout_seconds", 60))
+
+    if provider == "ollama":
+        r = requests.post(
+            f"{base_url}/api/generate",
+            json={"model": model, "prompt": prompt, "stream": False},
+            timeout=timeout,
+        )
+        r.raise_for_status()
+        return (r.json().get("response") or "").strip()
+
+    if provider in ("openai-compatible", "openai"):
+        api_key = os.environ.get(llm.get("api_key_env", "OPENAI_API_KEY"), "")
+        headers = {"Content-Type": "application/json"}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+        r = requests.post(
+            f"{base_url}/chat/completions",
+            headers=headers,
+            json={
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": "Summarize official weather alerts accurately and concisely."},
+                    {"role": "user", "content": prompt},
+                ],
+                "temperature": 0.2,
+            },
+            timeout=timeout,
+        )
+        r.raise_for_status()
+        return r.json()["choices"][0]["message"]["content"].strip()
+
+    raise RuntimeError(f"Unsupported LLM provider: {provider}")
+
+
+def llm_summary_for_alert(config, feature, location_name):
+    if not (config.get("llm", {}) or {}).get("enabled"):
+        return ""
+
+    try:
+        summary = call_llm(config, build_llm_prompt(config, feature, location_name))
+        if not summary:
+            return ""
+        return "AI-generated summary. Verify against the official NWS alert.\n\n" + summary
+    except Exception as e:
+        print(f"LLM ERROR: {e}", file=sys.stderr)
+        return ""
 
 
 def notify(config, message):
@@ -396,7 +506,9 @@ def main():
     if "--test" in sys.argv:
         feature = fake_alert()
         location_name = config.get("location", {}).get("name", "configured location")
-        message = f"NEW WEATHER ALERT for {location_name}\n\n{format_alert(config, feature, location_name)}"
+        base_alert = format_alert(config, feature, location_name)
+        ai_summary = llm_summary_for_alert(config, feature, location_name)
+        message = f"NEW WEATHER ALERT for {location_name}\n\n{ai_summary}\n\n---\n\n{base_alert}" if ai_summary else f"NEW WEATHER ALERT for {location_name}\n\n{base_alert}"
         notify(config, message)
         rss_items.append(alert_to_rss_item(feature, message))
         write_rss(config, rss_items)
@@ -430,7 +542,9 @@ def main():
             if state_key in state["seen_alerts"]:
                 continue
 
-            message = f"NEW WEATHER ALERT for {name}\n\n{format_alert(config, feature, name)}"
+            base_alert = format_alert(config, feature, name)
+            ai_summary = llm_summary_for_alert(config, feature, name)
+            message = f"NEW WEATHER ALERT for {name}\n\n{ai_summary}\n\n---\n\n{base_alert}" if ai_summary else f"NEW WEATHER ALERT for {name}\n\n{base_alert}"
             notify(config, message)
             rss_items.append(alert_to_rss_item(feature, message))
 
