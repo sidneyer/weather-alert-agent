@@ -265,9 +265,11 @@ def notify(config, message):
 
 def main():
     config = load_config()
+    rss_items = []
 
     if "--test" in sys.argv:
-        message = f"NEW WEATHER ALERT for {config['location'].get('name', 'configured location')}\n\n{format_alert(fake_alert())}"
+        feature = fake_alert()
+        message = f"NEW WEATHER ALERT for {config['location'].get('name', 'configured location')}\n\n{format_alert(feature)}"
         notify(config, message)
         rss_items.append(alert_to_rss_item(config, feature, message))
         print("Test notification sent.")
