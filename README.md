@@ -1,19 +1,41 @@
 # weather-alert-agent
 
-A small self-hosted weather alert agent using the public National Weather Service API.
+A privacy-focused self-hosted weather intelligence agent using the public National Weather Service API.
+Unlike typical weather apps, weather-alert-agent focuses on actionable local alerts, relevance filtering, and multi-channel notifications instead of generic forecasts.
 
-It checks for active weather alerts for a configured latitude/longitude, deduplicates alerts, and sends notifications.
 
 ## Features
 
-- National Weather Service alert polling
-- State-based deduplication
+- Real-time National Weather Service alert monitoring
+- Self-hosted and outbound-only
+- No cloud account required
+- No telemetry
+- No inbound ports required
 - Matrix notifications
-- Experimental ntfy notifications
-- RSS feed output
-- stdout logging
-- launchd-friendly
-- No inbound network exposure required
+- Experimental ntfy support
+- Experimental Discord webhook support
+- Experimental Telegram support
+- RSS feed generation
+- Multi-location monitoring
+- Quiet hours with critical alert override
+- Marine and coastal alert relevance
+- Commuter/outdoor relevance profiles
+- Severity classification
+- Recommended action summaries
+- State-based alert deduplication
+- launchd-friendly automation
+- Interactive setup wizard
+- Lightweight Python implementation
+
+## Designed for
+
+- Homelab users
+- Self-hosters
+- Privacy-conscious users
+- Emergency preparedness
+- Coastal communities
+- Marine users
+- Power users who want alert routing and filtering
 
 ## Requirements
 
