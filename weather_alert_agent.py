@@ -265,7 +265,7 @@ def notify(config, message):
         config.get("notifications", {}).get("stdout", {}).get("enabled", True)
         and config.get("debug_logging", False)
     ):
-        print(message)
+        print(f"[DEBUG] Prepared weather alert notification (length={len(message)})")
 
     for sender in (send_matrix, send_ntfy, send_discord, send_telegram):
         try:
