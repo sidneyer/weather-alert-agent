@@ -62,3 +62,26 @@ Runs well with launchd every 120 seconds.
 ## Disclaimer
 
 Unofficial project. Not affiliated with NOAA or the National Weather Service.
+
+## Setup Wizard
+
+Before running setup, have this ready:
+
+Required:
+- Location name
+- Latitude
+- Longitude
+
+Optional:
+- Matrix homeserver
+- Matrix room ID
+- Matrix access token
+- ntfy topic/token
+- Discord webhook URL
+- Telegram bot token/chat ID
+- RSS output path
+
+Run:
+
+```bash
+python3 setup.py

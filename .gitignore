@@ -5,3 +5,4 @@ weather-alerts.xml
 *.log
 .DS_Store
 __pycache__/
+.env
